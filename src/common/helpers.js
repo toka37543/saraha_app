@@ -1,7 +1,10 @@
 import config from '../config.js';
+import {TOKEN_TYPES} from "./enums.js";
+import {BadRequestException, ValidationException} from "./errors.js";
 
 import argon2 from "argon2";
 import jwt from "jsonwebtoken";
+import * as crypto from "node:crypto";
 export const validateEmail = (email) => {
     const allowedEmails = [
         "gmail.com",
@@ -43,7 +46,7 @@ export async function comparePasswords(plainPassword, hashedPassword) {
 }
 
 export function successResponse(
-    message, data
+    message, data = null
 ) {
     return  {
         success: true,
@@ -53,18 +56,46 @@ export function successResponse(
 }
 
 export function errorResponse(
-    message, error
+    message, error = null
 ) {
     return  {
         success: false,
-        message: error,
+        message: message,
         error: error,
     }
 }
 
-export function generateToken(payload, expiresIn = "1h") {
-    return jwt.sign(payload, config.jwtSecret, {expiresIn: expiresIn});
+// parse data with a zod schema, throws a ValidationException with readable issues on failure
+export function validate(schema, data) {
+    const result = schema.safeParse(data);
+    if (!result.success) {
+        throw new ValidationException(result.error.issues.map((issue) => ({
+            field: issue.path.join("."),
+            message: issue.message,
+        })));
+    }
+    return result.data;
 }
-export function decodeToken(token) {
-    return jwt.verify(token, config.jwtSecret)
+
+// each token type is signed with its own secret, so an access token can never be used as a refresh token
+function getTokenConfig(tokenType) {
+    switch (tokenType) {
+        case TOKEN_TYPES.access:
+            return {secret: config.jwtSecret, expiresIn: config.jwtExpiresIn};
+        case TOKEN_TYPES.refresh:
+            return {secret: config.jwtRefreshSecret, expiresIn: config.jwtRefreshExpiresIn};
+        default:
+            throw new BadRequestException("Invalid token type", null, "INVALID_TOKEN_TYPE");
+    }
+}
+
+export function generateToken(payload, tokenType = TOKEN_TYPES.access) {
+    const {secret, expiresIn} = getTokenConfig(tokenType);
+    // jwtid (jti) is a unique id per token, used as the key when revoking it in redis
+    return jwt.sign(payload, secret, {expiresIn: expiresIn, jwtid: crypto.randomUUID()});
+}
+
+export function verifyToken(token, tokenType = TOKEN_TYPES.access) {
+    const {secret} = getTokenConfig(tokenType);
+    return jwt.verify(token, secret)
 }

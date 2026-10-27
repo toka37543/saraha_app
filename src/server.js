@@ -2,23 +2,22 @@ import express from 'express';
 import mongoose from "mongoose";
 import config from './config.js'
 import routes from "./routes.js";
-import errorHandler from "./middelwares/error handler.js";
+import {redisClient} from "./common/redis.js";
+import errorHandler, {notFoundHandler} from "./middelwares/error handler.js";
 
 const app = express();
 await mongoose.connect(config.mongodb);
+await redisClient.connect();
 
 app.use(express.json());
-app.use(routes);
-app.use(errorHandler)
+// uploaded files (profile photos), nosniff so the browser never treats them as anything but their content type
+app.use("/uploads", express.static("uploads", {
+    setHeaders: (res) => res.setHeader("X-Content-Type-Options", "nosniff")
+}));
 
-app.use((error,req,res,next) => {
-    if (error) {
-        res.status(error.code || 500).json({
-            status: "error",
-            message: error.message  ,
-        })
-    }
-})
+app.use(routes);
+app.use(notFoundHandler);
+app.use(errorHandler)
 
 app.listen(config.port, () => {
     console.log("Listening on port: " + config.port);

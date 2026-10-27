@@ -17,7 +17,16 @@ const userSchema = new mongoose.Schema({
         enum: Object.values(GENDERS), // ['MALE',"FEMALE"] // expects array,
     },
     age: Number,
+    photo: String, // relative path, served under /uploads
     password: String,
+}, {
+    toJSON: {
+        // never send the password hash back in a response
+        transform: (doc, ret) => {
+            delete ret.password;
+            return ret;
+        }
+    }
 })
 
 export const User = mongoose.model("User", userSchema);
