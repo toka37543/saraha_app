@@ -10,6 +10,8 @@ const router = express.Router();
 // Auth
 router.post("/auth/register", AuthController.register);
 router.post("/auth/login", AuthController.login);
+router.post("/auth/confirm-email", AuthController.confirmEmail);
+router.post("/auth/resend-confirmation", AuthController.resendEmailConfirmation);
 router.post("/auth/refresh-token", decodeRefreshToken, AuthController.refreshToken);
 router.post("/auth/logout", authenticate, decodeRefreshToken, AuthController.logout);
 router.post("/auth/forget-password",AuthController.forgotPassword)

@@ -12,6 +12,10 @@ const userSchema = new mongoose.Schema({
     first_name: String,
     last_name: String,
     email: String,
+    email_confirmed: {
+        type: Boolean,
+        default: false
+    },
     gender: {
         type: String,
         enum: Object.values(GENDERS), // ['MALE',"FEMALE"] // expects array,

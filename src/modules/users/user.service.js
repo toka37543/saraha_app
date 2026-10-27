@@ -47,9 +47,16 @@ export const UserService = {
             throw new ConflictException("Email or username already exists");
         }
 
-        data.password = await hashPassword(password);
-
-        return await User.create(data);
+        // only pick known fields, so fields like email_confirmed can't be set from the request body
+        return await User.create({
+            first_name,
+            last_name,
+            email,
+            username,
+            password: await hashPassword(password),
+            gender,
+            age
+        });
     },
     updatePhoto: async (user, file) => {
         const oldPhoto = user.photo;

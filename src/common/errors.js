@@ -26,6 +26,12 @@ export class UnauthorizedException extends AppError {
     }
 }
 
+export class ForbiddenException extends AppError {
+    constructor(message = "Forbidden", details = null, code = "FORBIDDEN") {
+        super(message, 403, code, details);
+    }
+}
+
 export class NotFoundException extends AppError {
     constructor(message = "Not found", details = null, code = "NOT_FOUND") {
         super(message, 404, code, details);
@@ -35,5 +41,17 @@ export class NotFoundException extends AppError {
 export class ConflictException extends AppError {
     constructor(message = "Conflict", details = null, code = "CONFLICT") {
         super(message, 409, code, details);
+    }
+}
+
+export class TooManyRequestsException extends AppError {
+    constructor(message = "Too many requests", details = null, code = "TOO_MANY_REQUESTS") {
+        super(message, 429, code, details);
+    }
+}
+
+export class ServiceUnavailableException extends AppError {
+    constructor(message = "Service unavailable", details = null, code = "SERVICE_UNAVAILABLE") {
+        super(message, 503, code, details);
     }
 }

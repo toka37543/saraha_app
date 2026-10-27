@@ -1,12 +1,26 @@
 import {UserService} from "../users/user.service.js";
 import {AuthService} from  "./auth.service.js"
 import {successResponse, validate} from "../../common/helpers.js"
-import {loginSchema,registerSchema  } from "./auth.validation.js"
+import {loginSchema, registerSchema, emailSchema, resetPasswordSchema, confirmEmailSchema} from "./auth.validation.js"
 export const AuthController = {
     register: async (req, res) => {
         const body = validate(registerSchema, req.body || {});
         const user = await UserService.create(body);
-        return res.status(201).json(successResponse("User Created Successfully", user));
+        // the user is already created, a failing email shouldn't fail the registration, they can ask for a new one
+        await AuthService.sendEmailConfirmation(user).catch((error) => {
+            console.error("Confirmation email failed:", error.message);
+        });
+        return res.status(201).json(successResponse("User Created Successfully, please check your email to confirm your account", user));
+    },
+    confirmEmail: async (req, res) => {
+        const body = validate(confirmEmailSchema, req.body || {});
+        await AuthService.confirmEmail(body);
+        return res.status(200).json(successResponse("Email Confirmed Successfully", null));
+    },
+    resendEmailConfirmation: async (req, res) => {
+        const body = validate(emailSchema, req.body || {});
+        const result = await AuthService.resendEmailConfirmation(body);
+        return res.status(200).json(successResponse("Confirmation Email Sent Successfully", result));
     },
     login: async (req, res) => {
         const body = validate(loginSchema, req.body || {});
@@ -24,12 +38,12 @@ export const AuthController = {
         return res.status(200).json(successResponse("User Logged Out Successfully", result));
     },
     forgotPassword: async (req, res) => {
-        const body = req.body || {};
+        const body = validate(emailSchema, req.body || {});
         const result = await AuthService.forgetPassword(body);
-        return res.status(200).json(successResponse("Password Reset Token Created Successfully", result));
+        return res.status(200).json(successResponse("Password Reset Code Sent To Your Email", result));
     },
     resetPassword: async (req, res) => {
-        const body = req.body || {};
+        const body = validate(resetPasswordSchema, req.body || {});
         await AuthService.resetPassword(body);
         return res.status(200).json(successResponse("Password Reset Successfully", null));
     }
