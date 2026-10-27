@@ -2,6 +2,7 @@ import express from "express";
 import {AuthController} from "./modules/auth/auth.controller.js";
 import {MessageController} from "./modules/messages/message.controller.js";
 import {UserController} from "./modules/users/user.controller.js";
+import {authenticate} from "./middelwares/auth.middleware.js"
 
 const app = express();
 
@@ -16,7 +17,7 @@ app.post("/messages", MessageController.create);
 
 
 //profile
-app.get("/user/profile", UserController.profile);
+app.get("/user/profile",authenticate, UserController.profile);
 
 //
 
